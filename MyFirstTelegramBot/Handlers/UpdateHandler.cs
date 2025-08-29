@@ -19,7 +19,7 @@ public class UpdateHandler
         var chatId = update.CallbackQuery?.Message?.Chat.Id;
         var messageId = update.CallbackQuery?.Message?.MessageId;
         var callBackData = update.CallbackQuery?.Data;
-
+        
         if (update.Type == UpdateType.Message && update.Message?.Text?.Trim() == "/start")
         {
             var firstName = update.Message.From?.FirstName ?? "Пользователь";
@@ -35,31 +35,47 @@ public class UpdateHandler
                 || callBackData == "publish_task_next4" 
                 || callBackData == "publish_task_next5")
             {
-                await _buttonHandler.SendPublishTaskStepAsync(chatId!.Value, callBackData, cancellationToken, update.CallbackQuery.Message.MessageId);
+                await _buttonHandler.SendPublishTaskStepAsync(chatId!.Value, callBackData, update.CallbackQuery.Message.MessageId, cancellationToken);
             }
 
-            //switch (callBackData)
-            //{
-            //    case "publish_task":
-            //        await _buttonHandler.SendPublishTaskStepAsync(chatId!.Value, callBackData, cancellationToken, update.CallbackQuery.Message.MessageId);
-            //        break;
+            else if (callBackData == "add_car"
+                || callBackData == "add_car_next1"
+                || callBackData == "add_car_next2"
+                || callBackData == "add_car_next3"
+                || callBackData == "add_car_next4")
+            {
+                await _buttonHandler.SendAddCarAsync(chatId!.Value, callBackData, update.CallbackQuery.Message.MessageId, cancellationToken);
+            }
 
-            //    case "add_car":
-            //        await _buttonHandler.SendAddCarAsync(chatId!.Value, cancellationToken);
-            //        break;
+            else if (callBackData == "cancel_booking"
+                || callBackData == "cancel_booking_next1"
+                || callBackData == "cancel_booking_next2"
+                || callBackData == "cancel_booking_next3")
+            {
+                await _buttonHandler.SendCancelBookingAsync(chatId!.Value, callBackData, update.CallbackQuery.Message.MessageId, cancellationToken);
+            }
 
-            //    case "cancel_booking":
-            //        await _buttonHandler.SendCancelBookingAsync(chatId!.Value, cancellationToken);
-            //        break;
+            else if (callBackData == "app_issue"
+                || callBackData == "app_issue_next1"
+                || callBackData == "app_issue_next2"
+                || callBackData == "app_issue_next3"
+                || callBackData == "app_issue_next4")
+            {
+                await _buttonHandler.SendAppIssueAsync(chatId!.Value, callBackData, update.CallbackQuery.Message.MessageId, cancellationToken);
+            }
 
-            //    case "app_issue":
-            //        await _buttonHandler.SendAppIssueAsync(chatId!.Value, cancellationToken);
-            //        break;
+            else if (callBackData == "contact_operator")
+            {
+                var from = update.CallbackQuery?.From;
+                var userName = !string.IsNullOrEmpty(from?.Username) ? "@" + from.Username : from?.FirstName ?? "Пользователь";
 
-            //    case "contact_operator":
-            //        await _buttonHandler.SendContactOperatorAsync(chatId!.Value, cancellationToken);
-            //        break;
-            //}
+                await _buttonHandler.SendContactOperatorAsync(
+                    chatId!.Value,
+                    "Бот в обработке",
+                    userName,
+                    cancellationToken
+                );
+            }
         }
     }
 
