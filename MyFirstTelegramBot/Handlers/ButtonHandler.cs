@@ -300,7 +300,7 @@ public class ButtonHandler(ITelegramBotClient botClient)
         // Файлни очиш
         await using var stream = File.OpenRead(imageFile);
 
-        if (callbackData == "cancel_booking")
+        if (callbackData == "app_issue")
         {
             await _botClient.SendPhoto(
                 chatId: chatId,
@@ -325,26 +325,29 @@ public class ButtonHandler(ITelegramBotClient botClient)
         }
     }
 
-    public async Task SendContactOperatorAsync(
-      long chatId,
-      string? userMessage,
-      string userName,
-      CancellationToken cancellationToken)
-    {
-        // 1. Клиентга тасдиқ хабарини юбориш
-        await botClient.SendMessage(
-            chatId,
-            "Менеджер скоро свяжется с вами. Пожалуйста, напишите ваш вопрос здесь 📝.",
-            cancellationToken: cancellationToken);
+    //public async Task SendContactOperatorAsync(
+    //  long chatId,
+    //  string? userMessage,
+    //  string userName,
+    //  CancellationToken cancellationToken)
+    //{
+    //    // 1. Клиентга тасдиқ хабарини юбориш
+    //    await botClient.SendMessage(
+    //        chatId,
+    //        "Менеджер скоро свяжется с вами. Пожалуйста, напишите ваш вопрос здесь 📝.",
+    //        cancellationToken: cancellationToken);
 
-        // 2. Операторлар гуруҳи ID
-        long operatorGroupId = -4893537315; // сен олган группа ID
+    //    // 2. Операторлар гуруҳи ID
+    //    long operatorGroupId = -4893537315; // сен олган группа ID
 
-        // 3. Операторларга хабар
-        await botClient.SendMessage(
-            chatId: operatorGroupId,
-            text: $"🆕 Клиент связывается с операторами:\n👤 {userName}\n📩 Сообщение: {userMessage}",
-            cancellationToken: cancellationToken
-        );
-    }
+    //    // 3. Операторларга хабар
+    //    await botClient.SendMessage(
+    //        chatId: operatorGroupId,
+    //        text: $"🆕 Клиент связывается с операторами:\n👤 {userName}\n📩 Сообщение: {userMessage}",
+    //        cancellationToken: cancellationToken
+    //    );
+
+    //    // 4. Операторга клиендан келган хабарни юбориш
+    //    // 5. Агар клиент расм ёки бошқа файл юборса, уни ҳам операторларга юбориш мумкин
+    //}
 }
