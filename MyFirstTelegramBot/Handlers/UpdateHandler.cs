@@ -10,6 +10,7 @@ public class UpdateHandler
     private readonly ButtonHandler _buttonHandler;
     private readonly ConnectOperatorHandler _connectOperatorHandler;
     private bool test = false;
+
     public UpdateHandler(ButtonHandler buttonHandler, ConnectOperatorHandler connectOperatorHandler)
     {
         _buttonHandler = buttonHandler;
@@ -21,6 +22,7 @@ public class UpdateHandler
         var chatId = update.CallbackQuery?.Message?.Chat.Id;
         var messageId = update.CallbackQuery?.Message?.MessageId;
         var callBackData = update.CallbackQuery?.Data;
+        string callBackDataId = update.CallbackQuery?.Id ?? "";
 
         if (update.Type == UpdateType.Message && update.Message?.Text?.Trim() == "/start")
         {
@@ -39,7 +41,7 @@ public class UpdateHandler
                     || callBackData == "publish_task_next4"
                     || callBackData == "publish_task_next5")
                 {
-                    await _buttonHandler.SendPublishTaskStepAsync(chatId.Value, callBackData, messageId.Value, cancellationToken);
+                    await _buttonHandler.SendPublishTaskStepAsync(chatId.Value, callBackData, messageId.Value, callBackDataId, cancellationToken);
                     test = false;
                 }
 
@@ -49,7 +51,7 @@ public class UpdateHandler
                     || callBackData == "add_car_next3"
                     || callBackData == "add_car_next4")
                 {
-                    await _buttonHandler.SendAddCarAsync(chatId.Value, callBackData, messageId.Value, cancellationToken);
+                    await _buttonHandler.SendAddCarAsync(chatId.Value, callBackData, messageId.Value, callBackDataId, cancellationToken);
                     test = false;
                 }
 
@@ -58,7 +60,7 @@ public class UpdateHandler
                     || callBackData == "cancel_booking_next2"
                     || callBackData == "cancel_booking_next3")
                 {
-                    await _buttonHandler.SendCancelBookingAsync(chatId.Value, callBackData, messageId.Value, cancellationToken);
+                    await _buttonHandler.SendCancelBookingAsync(chatId.Value, callBackData, messageId.Value, callBackDataId, cancellationToken);
                     test = false;
                 }
 
@@ -68,18 +70,17 @@ public class UpdateHandler
                     || callBackData == "app_issue_next3"
                     || callBackData == "app_issue_next4")
                 {
-                    await _buttonHandler.SendAppIssueAsync(chatId.Value, callBackData, messageId.Value, cancellationToken);
+                    await _buttonHandler.SendAppIssueAsync(chatId.Value, callBackData, messageId.Value, callBackDataId, cancellationToken);
                     test = false;
                 }
             }
-        }
+        } 
 
         if (update.Type == UpdateType.CallbackQuery || update.Type == UpdateType.Message)
         {
-            if (callBackData == "contact_operator")//update.Type == UpdateType.Message)
+            if (callBackData == "contact_operator")
             {
                 await _connectOperatorHandler.HandleUpdateAsync(update, cancellationToken);
-                //await _connectOperatorHandler.HandleCallback(update.CallbackQuery, cancellationToken);
                 test = true;
             }
             else if (test && update.Type == UpdateType.Message)

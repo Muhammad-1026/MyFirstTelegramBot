@@ -12,7 +12,7 @@ public class ButtonHandler(ITelegramBotClient botClient)
     string caption = "";
     string imageFile = "";
 
-    public async Task SendPublishTaskStepAsync(long chatId, string callbackData, int messageId, CancellationToken cancellationToken)
+    public async Task SendPublishTaskStepAsync(long chatId, string callbackData, int messageId, string callBackDataId, CancellationToken cancellationToken)
     {
         switch (callbackData)
         {
@@ -76,36 +76,10 @@ public class ButtonHandler(ITelegramBotClient botClient)
                 return;
         }
 
-        // Файлни очиш
-        await using var stream = File.OpenRead(imageFile);
-
-        // Агар биринчи қадам бўлса — янги хабар
-        if (callbackData == "publish_task")
-        {
-            await _botClient.SendPhoto(
-                chatId: chatId,
-                photo: InputFile.FromStream(stream, Path.GetFileName(imageFile)),
-                caption: caption,
-                replyMarkup: navButtons,
-                cancellationToken: cancellationToken
-            );
-        }
-        else // кейинги қадамлар — эски хабарни edit қиламиз
-        {
-            await _botClient.EditMessageMedia(
-                chatId: chatId,
-                messageId: messageId,
-                media: new InputMediaPhoto(InputFile.FromStream(stream, Path.GetFileName(imageFile)))
-                {
-                    Caption = caption
-                },
-                replyMarkup: navButtons,
-                cancellationToken: cancellationToken
-            );
-        }
+        await ResponseMessage(callbackData, imageFile, chatId, messageId, callBackDataId, cancellationToken);
     }
 
-    public async Task SendAddCarAsync(long chatId, string callbackData, int messageId, CancellationToken cancellationToken)
+    public async Task SendAddCarAsync(long chatId, string callbackData, int messageId, string callBackDataId, CancellationToken cancellationToken)
     {
         switch (callbackData)
         {
@@ -154,35 +128,11 @@ public class ButtonHandler(ITelegramBotClient botClient)
                     InlineKeyboardButton.WithCallbackData("⬅️ Назад", "add_car_next3"));
                 break;
         }
-        // Файлни очиш
-        await using var stream = File.OpenRead(imageFile);
 
-        if (callbackData == "add_car")
-        {
-            await _botClient.SendPhoto(
-                chatId: chatId,
-                photo: InputFile.FromStream(stream, Path.GetFileName(imageFile)),
-                caption: caption,
-                replyMarkup: navButtons,
-                cancellationToken: cancellationToken
-            );
-        }
-        else // кейинги қадамлар — эски хабарни edit қиламиз
-        {
-            await _botClient.EditMessageMedia(
-                chatId: chatId,
-                messageId: messageId,
-                media: new InputMediaPhoto(InputFile.FromStream(stream, Path.GetFileName(imageFile)))
-                {
-                    Caption = caption
-                },
-                replyMarkup: navButtons,
-                cancellationToken: cancellationToken
-            );
-        }
+        await ResponseMessage(callbackData, imageFile, chatId, messageId, callBackDataId,cancellationToken);
     }
 
-    public async Task SendCancelBookingAsync(long chatId, string callbackData, int messageId, CancellationToken cancellationToken)
+    public async Task SendCancelBookingAsync(long chatId, string callbackData, int messageId, string callBackDataId, CancellationToken cancellationToken)
     {
         switch (callbackData)
         {
@@ -219,35 +169,10 @@ public class ButtonHandler(ITelegramBotClient botClient)
                 break;
         }
 
-        // Файлни очиш
-        await using var stream = File.OpenRead(imageFile);
-
-        if (callbackData == "cancel_booking")
-        {
-            await _botClient.SendPhoto(
-                chatId: chatId,
-                photo: InputFile.FromStream(stream, Path.GetFileName(imageFile)),
-                caption: caption,
-                replyMarkup: navButtons,
-                cancellationToken: cancellationToken
-            );
-        }
-        else // кейинги қадамлар — эски хабарни edit қиламиз
-        {
-            await _botClient.EditMessageMedia(
-                chatId: chatId,
-                messageId: messageId,
-                media: new InputMediaPhoto(InputFile.FromStream(stream, Path.GetFileName(imageFile)))
-                {
-                    Caption = caption
-                },
-                replyMarkup: navButtons,
-                cancellationToken: cancellationToken
-            );
-        }
+        await ResponseMessage(callbackData, imageFile, chatId, messageId, callBackDataId, cancellationToken);
     }
 
-    public async Task SendAppIssueAsync(long chatId, string callbackData, int messageId, CancellationToken cancellationToken)
+    public async Task SendAppIssueAsync(long chatId, string callbackData, int messageId, string callBackDataId, CancellationToken cancellationToken)
     {
         switch (callbackData)
         {
@@ -297,11 +222,17 @@ public class ButtonHandler(ITelegramBotClient botClient)
                 break;
         }
 
-        // Файлни очиш
-        await using var stream = File.OpenRead(imageFile);
+        await ResponseMessage(callbackData, imageFile, chatId, messageId, callBackDataId, cancellationToken);
+    }
 
-        if (callbackData == "app_issue")
+    private async Task ResponseMessage(string callbackData, string imageFile, long chatId, int messageId, string callBackDataId, CancellationToken cancellationToken)
+    {
+        var stream = File.OpenRead(imageFile);
+
+        if (callbackData == "app_issue" || callbackData == "cancel_booking" || callbackData == "add_car" || callbackData == "publish_task")
         {
+            await _botClient.AnswerCallbackQuery(callBackDataId, "✅ Выбрано!");
+
             await _botClient.SendPhoto(
                 chatId: chatId,
                 photo: InputFile.FromStream(stream, Path.GetFileName(imageFile)),
@@ -324,30 +255,4 @@ public class ButtonHandler(ITelegramBotClient botClient)
             );
         }
     }
-
-    //public async Task SendContactOperatorAsync(
-    //  long chatId,
-    //  string? userMessage,
-    //  string userName,
-    //  CancellationToken cancellationToken)
-    //{
-    //    // 1. Клиентга тасдиқ хабарини юбориш
-    //    await botClient.SendMessage(
-    //        chatId,
-    //        "Менеджер скоро свяжется с вами. Пожалуйста, напишите ваш вопрос здесь 📝.",
-    //        cancellationToken: cancellationToken);
-
-    //    // 2. Операторлар гуруҳи ID
-    //    long operatorGroupId = -4893537315; // сен олган группа ID
-
-    //    // 3. Операторларга хабар
-    //    await botClient.SendMessage(
-    //        chatId: operatorGroupId,
-    //        text: $"🆕 Клиент связывается с операторами:\n👤 {userName}\n📩 Сообщение: {userMessage}",
-    //        cancellationToken: cancellationToken
-    //    );
-
-    //    // 4. Операторга клиендан келган хабарни юбориш
-    //    // 5. Агар клиент расм ёки бошқа файл юборса, уни ҳам операторларга юбориш мумкин
-    //}
 }
