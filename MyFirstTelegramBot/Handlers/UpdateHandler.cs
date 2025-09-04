@@ -44,7 +44,6 @@ public class UpdateHandler
                     await _buttonHandler.SendPublishTaskStepAsync(chatId.Value, callBackData, messageId.Value, callBackDataId, cancellationToken);
                     test = false;
                 }
-
                 else if (callBackData == "add_car"
                     || callBackData == "add_car_next1"
                     || callBackData == "add_car_next2"
@@ -54,7 +53,6 @@ public class UpdateHandler
                     await _buttonHandler.SendAddCarAsync(chatId.Value, callBackData, messageId.Value, callBackDataId, cancellationToken);
                     test = false;
                 }
-
                 else if (callBackData == "cancel_booking"
                     || callBackData == "cancel_booking_next1"
                     || callBackData == "cancel_booking_next2"
@@ -63,7 +61,6 @@ public class UpdateHandler
                     await _buttonHandler.SendCancelBookingAsync(chatId.Value, callBackData, messageId.Value, callBackDataId, cancellationToken);
                     test = false;
                 }
-
                 else if (callBackData == "app_issue"
                     || callBackData == "app_issue_next1"
                     || callBackData == "app_issue_next2"
