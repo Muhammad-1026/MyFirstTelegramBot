@@ -37,8 +37,6 @@ public class ConnectOperatorHandler
             if (callback.Data == "contact_operator")
             {
                 var chatId = callback.Message!.Chat.Id;
-                var from = callback.From;
-                var userName = !string.IsNullOrEmpty(from.Username) ? "@" + from.Username : from.FirstName;
 
                 await _botClient.AnswerCallbackQuery(callback.Id, "Вы выбрали связь с оператором. Пожалуйста, подождите...", cancellationToken: cancellationToken);
 
@@ -51,13 +49,6 @@ public class ConnectOperatorHandler
 
                 // Клиент ID'ни актив сессияга қўшамиз
                 _activeSupportUsers[chatId] = true;
-
-                // Операторларга хабар
-                await _botClient.SendMessage(
-                    _operatorGroupId,
-                    $"Forwarded from {userName}\n🆔 {chatId}",
-                    cancellationToken: cancellationToken
-                );
             }
         }
         catch (Telegram.Bot.Exceptions.ApiRequestException error)
@@ -73,61 +64,110 @@ public class ConnectOperatorHandler
         var chatId = message.Chat.Id;
 
         // Агар клиент актив сессияда бўлса → хабар операторларга кетади
-        if (_activeSupportUsers.ContainsKey(chatId))
+        if (_activeSupportUsers.ContainsKey(chatId) && message.Text != "/start")
         {
-            await _botClient.SendMessage(
-                _operatorGroupId,
-                $"📩 Вопрос от клиента:\n🆔 {chatId}\n👤 @{message.From?.Username ?? message.From?.FirstName}\n\n{message.Text}",
-                cancellationToken: cancellationToken
-            );
-        }
-        // Агар хабар операторлар гуруҳидан келса ва reply бўлса
-        else if (chatId == _operatorGroupId && message.ReplyToMessage != null)
-        {
-            var match = Regex.Match(message.ReplyToMessage.Text!, @"🆔 (\d+)");
-            if (match.Success && long.TryParse(match.Groups[1].Value, out var clientId))
+           
+            if (message.Text != null)
             {
-                try
-                {
-                    await _botClient.SendMessage(
-                        clientId,
-                        $"\n{message.Text}",
-                        cancellationToken: cancellationToken
-                    );
+                await _botClient.SendMessage(
+                    _operatorGroupId,
+                    $"📩 Вопрос от клиента:\n🆔 {chatId}\n👤 @{message.From?.Username ?? message.From?.FirstName}\n\n{message.Text}",
+                    cancellationToken: cancellationToken
+                );
+            }
+            else if (message.Photo != null)
+            {
+                await _botClient.SendPhoto(
+                    _operatorGroupId,
+                    message.Photo!.Last().FileId,
+                    caption: $"📩 Вопрос от клиента:\n🆔 {chatId}\n👤 @{message.From?.Username ?? message.From?.FirstName}",
+                    cancellationToken: cancellationToken
+                );
+            }
+            else if (message.Video != null)
+            {
+                await _botClient.SendVideo(
+                    _operatorGroupId,
+                    message.Video!.FileId,
+                    caption: $"📩 Вопрос от клиента:\n🆔 {chatId}\n👤 @{message.From?.Username ?? message.From?.FirstName}",
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
+        // Агар хабар операторлар гуруҳидан келса ва reply бўлса ёки сурат бўлса → хабар клиентга кетади
+        else if (chatId == _operatorGroupId && (message.ReplyToMessage != null || message.Photo != null || message.Video != null))
+        {
+            var sourceText = message.ReplyToMessage?.Text ?? message.ReplyToMessage?.Caption;
 
-                    // ✅ Муваффақият хабарини операторга юбориш
-                    await _botClient.SendMessage(
-                        _operatorGroupId,
-                        $"Сообщение успешно доставлено клиенту 🆔 {clientId}",
-                        cancellationToken: cancellationToken
-                    );
-                }
-                catch (Telegram.Bot.Exceptions.ApiRequestException error) when (error.Message.Contains("bot was blocked by the user"))
+            if (!string.IsNullOrWhiteSpace(sourceText))
+            {
+                var match = Regex.Match(sourceText, @"🆔 (\d+)");
+                if (match.Success && long.TryParse(match.Groups[1].Value, out var clientId))
                 {
-                    await _botClient.SendMessage(
-                        _operatorGroupId,
-                        $"Клиент заблокировал бота. Невозможно отправить сообщение. 🆔 {clientId}",
-                        cancellationToken: cancellationToken
-                    );
-                }
-                catch (Telegram.Bot.Exceptions.ApiRequestException error) when (error.Message.Contains("chat not found"))
-                {
-                    await _botClient.SendMessage(
-                        _operatorGroupId,
-                        $"Чат с клиентом не найден. Возможно, клиент удалил чат с ботом. 🆔 {clientId}",
-                        cancellationToken: cancellationToken
-                    );
-                }
-                catch (Exception ex)
-                {
-                    await _botClient.SendMessage(
-                        _operatorGroupId,
-                        $"Произошла непредвиденная ошибка при отправке сообщения клиенту 🆔 {clientId}:\n{ex.Message}",
-                        cancellationToken: cancellationToken
-                    );
+                    try
+                    {
+                        
+                        if (!string.IsNullOrEmpty(message.Text))
+                        {
+                            await _botClient.SendMessage(
+                                clientId,
+                                message.Text,
+                                cancellationToken: cancellationToken
+                            );
+
+                            await _botClient.SendMessage(
+                                _operatorGroupId,
+                                $"Сообщение успешно доставлено клиенту",
+                                cancellationToken: cancellationToken
+                            );
+                        }
+                        else if (message.Photo != null)
+                        {
+                            await _botClient.SendPhoto(
+                                clientId,
+                                message.Photo!.Last().FileId,
+                                caption: message.Caption,
+                                cancellationToken: cancellationToken
+                            );
+
+                            await _botClient.SendMessage(
+                                _operatorGroupId,
+                                $"Фото успешно отправлено клиенту",
+                                cancellationToken: cancellationToken
+                            );
+                        }
+                        else if (message.Video != null)
+                        {
+                            await _botClient.SendVideo(
+                                clientId,
+                                message.Video!.FileId,
+                                caption: message.Caption,
+                                cancellationToken: cancellationToken
+                            );
+
+                            await _botClient.SendMessage(
+                                _operatorGroupId,
+                                $"Видео успешно отправлено клиенту",
+                                cancellationToken: cancellationToken
+                            );
+                        }
+                    }
+                    catch (Telegram.Bot.Exceptions.ApiRequestException error) when (error.Message.Contains("bot was blocked by the user"))
+                    {
+                        await _botClient.SendMessage(_operatorGroupId, $"Клиент заблокировал бота. Невозможно отправить сообщение. 🆔 {clientId}", cancellationToken: cancellationToken);
+                    }
+                    catch (Telegram.Bot.Exceptions.ApiRequestException error) when (error.Message.Contains("chat not found"))
+                    {
+                        await _botClient.SendMessage(_operatorGroupId, $"Чат с клиентом не найден. Возможно, клиент удалил чат с ботом. 🆔 {clientId}", cancellationToken: cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        await _botClient.SendMessage(_operatorGroupId, $"Произошла непредвиденная ошибка при отправке сообщения клиенту 🆔 {clientId}:\n{ex.Message}", cancellationToken: cancellationToken);
+                    }
                 }
             }
         }
+
     }
 
 }
